@@ -1,74 +1,34 @@
-// src/resources/user.entity.ts
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import Fastify from 'fastify';
+import swagger from 'fastify-swagger';
+import { userRoutes } from './routes/user';
 
-@Entity()
-export class User {
+const fastify = Fastify();
 
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column()
-    name: string;
-
-    // Add other user properties here
-}
-
-// src/resources/user.routes.ts
-import * as fastify from 'fastify'
-import {User} from './user.entity'
-
-const routes: fastify.RouteOptions[] = [
-  {
-    method: 'GET',
-    url: '/users',
-    handler: async (request, reply) => {
-      // Fetch and return users
-    }
+// Swagger options
+fastify.register(swagger, {
+  routePrefix: '/documentation',
+  swagger: {
+    info: {
+      title: 'User API',
+      description: 'API for managing user accounts',
+      version: '1.0.0',
+    },
+    host: 'localhost:3000',
+    schemes: ['http'],
+    consumes: ['application/json'],
+    produces: ['application/json'],
   },
-  {
-    method: 'POST',
-    url: '/users',
-    handler: async (request, reply) => {
-      // Create a new user
-    }
+  exposeRoute: true,
+});
+
+// Register routes
+fastify.register(userRoutes);
+
+// Start the server
+fastify.listen(3000, (err) => {
+  if (err) {
+    console.error(err);
+    process.exit(1);
   }
-  // Add other routes as needed
-]
-
-export default routes
-
-// src/plugins/auth.plugin.ts
-import * as fastify from 'fastify'
-import * as jwt from 'jsonwebtoken'
-
-export default function(fastify: fastify.FastifyInstance, opts: any, next: any) {
-  fastify.decorate('authenticate', async (request, reply) => {
-    try {
-      await request.jwtVerify()
-    } catch (err) {
-      reply.send(err)
-    }
-  })
-  next()
-}
-
-// src/index.ts
-import * as fastify from 'fastify'
-import auth from './plugins/auth.plugin'
-import userRoutes from './resources/user.routes'
-
-const server: fastify.FastifyInstance = fastify({})
-
-server.register(auth)
-userRoutes.forEach((route) => server.route(route))
-
-const start = async () => {
-  try {
-    await server.listen(3000)
-    server.log.info(`server listening on ${server.server.address().port}`)
-  } catch (err) {
-    server.log.error(err)
-    process.exit(1)
-  }
-}
-start()
+  console.log('Server listening on http://localhost:3000');
+});
